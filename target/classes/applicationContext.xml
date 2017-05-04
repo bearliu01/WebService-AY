@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xsi:schemaLocation="
+	   http://www.springframework.org/schema/beans 
+       http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+       http://www.springframework.org/schema/context 
+       http://www.springframework.org/schema/context/spring-context-4.0.xsd
+       http://www.springframework.org/schema/jee 
+       http://www.springframework.org/schema/jee/spring-jee-4.0.xsd 
+       http://www.springframework.org/schema/tx 
+       http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+       http://www.springframework.org/schema/aop
+       http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/aop/spring-mvc-4.0.xsd
+       http://cxf.apache.org/jaxws 
+       http://cxf.apache.org/schemas/jaxws.xsd">
+    
+    
+    <!-- 配置数据源 -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>	    
+	    <property name="url" value="jdbc:oracle:thin:@192.168.100.178:1521:ORCL"/>
+	    <property name="username" value="hnjz"/>
+	    <property name="password" value="hnjz"/>
+		
+	     <!-- 连接池启动时的初始值 -->
+		 <property name="initialSize" value="1"/>
+		 <!-- 连接池的最大值 -->
+		 <property name="maxActive" value="500"/>
+		 <!-- 最大空闲值.当经过一个高峰时间后，连接池可以慢慢将已经用不到的连接慢慢释放一部分，一直减少到maxIdle为止 -->
+		 <property name="maxIdle" value="2"/> 
+		 <!-- 最小空闲值.当空闲的连接数少于阀值时，连接池就会预申请去一些连接，以免洪峰来时来不及申请 -->
+		 <property name="minIdle" value="1"/>	 
+	</bean>
+	  
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 加载mybatis的配置文件 -->
+		<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+		<!-- 加载数据源 -->
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+		<!-- 
+		mapper批量扫描，从mapper包中扫描出mapper接口，自动创建代理对象并在spring容器中注入 
+		遵循规范：将mapper.java文件与mapper.xml映射文件名称保持一致，且在同一目录中
+		自动扫描出来的mapper的bean的id为mapper的类名（首字母小写）
+	-->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<!-- 指定扫描的包名 如果扫描多个包，每个包中间使用半角逗号分隔-->
+		<property name="basePackage" value="com.web.mapper"></property>
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+	</bean>
+	
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	<!-- 采取@Transactionl注解方式使用事务 -->
+	<tx:annotation-driven transaction-manager="txManager"/>
+	
+    <!-- 打开AOP注释功能 -->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+
+    <!-- 打开注释 -->
+    <context:annotation-config />
+      
+       
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+    
+    <!-- 扫描类包，将标注Spring注解的类自动转化Bean，同时完成Bean的注入 -->
+    <context:component-scan base-package="com.web.webservice.impl"/> 
+    <context:component-scan base-package="com.web.service.impl"/> 
+    <context:component-scan base-package="com.web.entity"/>
+    
+    <!-- 定义服务提供者  ReadMeter:实现类  /ReadMeter：请求地址-->  
+	<jaxws:endpoint implementor="#ReadMeter" address="/ReadMeter">
+	
+		<!-- 添加in拦截器 -->
+	    <jaxws:inInterceptors>
+	         <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"/>
+	         <bean class="com.web.interceptor.MyInterceptor"/>
+	    </jaxws:inInterceptors>
+	    <!-- 添加out拦截器 -->
+	    <jaxws:outInterceptors>
+	         <bean class="org.apache.cxf.interceptor.LoggingInInterceptor"/>
+	    </jaxws:outInterceptors>
+	
+	</jaxws:endpoint>
+ 
+</beans>

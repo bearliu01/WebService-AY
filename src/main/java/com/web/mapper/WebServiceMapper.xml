@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 
+	namespace命名空间，作用就是对sql进行分类化管理
+	注意：使用mapper代理开发，namespace等于mapper接口的地址
+ -->
+<mapper namespace="com.web.mapper.WebServiceMapper">
+
+	<select id="getCommPort" parameterType="String" resultType="Integer" >
+		select CommPort from muster where MusterNo= #{musterNo}
+	</select>
+	
+	<select id="getCommPara" parameterType="String" resultType="String" >
+		select CONNECTER.COMMPARA from METERINFO,MUSTER,CONNECTER WHERE METERINFO.MUSTERNO = MUSTER.MUSTERNO AND MUSTER.CONNECTNO = CONNECTER.CONNECTNO AND METERINFO.METERNO = #{meterNo}
+	</select>
+	
+	<select id="getMeterInfoById" parameterType="String" resultType="MeterInfo" >
+		SELECT METERINFO.METERNO ,METERINFO.MUSTERNO,METERINFO.COMNO,BAUD,CONNECTER.COMMPARA as connecter_commPara from METERINFO,MUSTER,CONNECTER WHERE METERINFO.MUSTERNO = MUSTER.MUSTERNO AND MUSTER.CONNECTNO = CONNECTER.CONNECTNO AND METERINFO.METERNO = #{meterNo}
+	</select>
+	
+	<insert id="insertSendList" parameterType="com.web.entity.SendList">
+		insert into sendList(listId,meterNo,sendType,sendContent,createDt,manageDt,manageFlag) values(#{listId},#{meterNo},#{sendType},#{sendContent},#{createDt},#{manageDt},#{manageFlag})
+	</insert>
+	
+	<update id="updateDosageAndReadDate">
+		UPDATE MeterInfo SET DosageSum=#{dosageSum,jdbcType=DOUBLE},LastReadDT=#{readDt,jdbcType=VARCHAR} WHERE meterNo=#{meterNo,jdbcType=VARCHAR}
+	</update>
+	
+	<insert id="insertDosageDays" parameterType="com.web.entity.DosageDays">
+		INSERT INTO dosagedays(MeterNo,MarkDay,Dosagesum,realDosageSum,ReadDT,ReadUser,CheckFlag) VALUES(#{meterNo},#{markDay},#{dosageSum},#{realDosageSum},#{readDt},#{readUser},#{checkFlag})
+	</insert>
+	
+	<update id="updateMeterSwitchState">
+		update meterInfo set switchState=#{switchState,jdbcType=INTEGER} where meterNo=#{meterNo,jdbcType=VARCHAR}
+	</update>
+	
+	<insert id="insertSwitchLog" parameterType="com.web.entity.WsLogInfo">
+		INSERT INTO WSLOGINFO(WSID,METERNO,WSDT,WSUSER,WSFLAG,SUCCFLAG) VALUES(#{wsId},#{meterNo},#{wsDt},#{wsUser},#{wsFlag},#{succFlag})
+	</insert>
+	
+	<insert id="insertSendData" parameterType="com.web.entity.SendData">
+		INSERT INTO SENDDATA(SENDID,METERNO,SENDTYPE,SENDCONTENT,CREATEDT,MANAGEFLAG,SDMUSTERNO) VALUES(#{sendId},#{meterNo},#{sendType},#{sendContent},#{createDt},#{manageFlag},#{sdMusterNo})
+	</insert>
+	
+	<select id="getDosageDays" resultType="com.web.entity.DosageDays">
+		SELECT meterNo,markDay,dayDosage,dosageSum,realDosagesum,readDt,readUser,checkFlag FROM DOSAGEDAYS WHERE meterNo =#{meterNo,jdbcType=VARCHAR} AND markDay &gt;= #{startDt,jdbcType=VARCHAR} AND markDay &lt;= #{endDt,jdbcType=VARCHAR} ORDER BY markDay DESC
+	</select>
+	
+	<select id="getDosageMonth" resultType="com.web.entity.DosageMonth">
+		SELECT meterNo,markMonth,monthDosage,dosageSum,readDt FROM DOSAGEMONTHS WHERE meterNo =#{meterNo,jdbcType=VARCHAR} AND markMonth &gt;= #{startMonth,jdbcType=VARCHAR} AND markMonth &lt;= #{endMonth,jdbcType=VARCHAR} ORDER BY markMonth DESC
+	</select>
+	
+	<insert id="insertChangeMeter" parameterType="com.web.entity.ChangeMeter">
+		insert into ChangeMeter(ChangeDT,NewMeterNo,OldMeterNo,OldDosageSum,StartDosage,ChangeReason,ChangeUser) values(#{changeDt},#{newMeterNo},#{oldMeterNo},#{oldDosageSum}，#{startDosage}，#{changeReason}，#{changeUser})
+	</insert>
+	
+</mapper>
+ 
